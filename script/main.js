@@ -12,7 +12,7 @@ function applyTheme(mode) {
   const root = document.documentElement;
   const c = CONFIG.colors;
 
-  root.style.setProperty("--primary", c.primary || "#ff69b4");
+  root.style.setProperty("--primary", c.primary || "#8b5cf6");
   root.style.setProperty("--accent", c.accent || "#15a1ed");
 
   const theme = c[mode] || c.dark || {};
@@ -27,12 +27,321 @@ function applyTheme(mode) {
 function createThemeToggle() {
   const btn = document.createElement("button");
   btn.id = "theme-toggle";
+  btn.type = "button";
   btn.title = "Toggle dark/light mode";
   btn.textContent = currentMode === "dark" ? "☀️" : "🌙";
   btn.addEventListener("click", () => {
     applyTheme(currentMode === "dark" ? "light" : "dark");
   });
   document.body.appendChild(btn);
+}
+
+// ── Music ────────────────────────────────────────────────────────
+function createMusicToggle(audio) {
+  if (!audio || !CONFIG.music) return;
+
+  const btn = document.createElement("button");
+  btn.id = "music-toggle";
+  btn.type = "button";
+
+  const updateButton = () => {
+    const isPlaying = !audio.paused;
+    btn.textContent = isPlaying ? "🔊" : "🔇";
+    btn.title = isPlaying ? "Turn off music" : "Turn on music";
+    btn.setAttribute("aria-label", btn.title);
+    btn.setAttribute("aria-pressed", String(isPlaying));
+  };
+
+  btn.addEventListener("click", async () => {
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch (error) {
+        console.warn("Unable to play background music.", error);
+      }
+    } else {
+      audio.pause();
+    }
+    updateButton();
+  });
+
+  audio.addEventListener("play", updateButton);
+  audio.addEventListener("pause", updateButton);
+  updateButton();
+  document.body.appendChild(btn);
+}
+
+function unlockMusicAfterWin(audio) {
+  if (!audio || !CONFIG.music) return;
+  createMusicToggle(audio);
+  audio.play().catch(() => {});
+}
+
+// ── Opening Number Game ─────────────────────────────────────────
+function startNumberGame(options = {}, onWin = () => {}) {
+  if (options.enabled === false) return Promise.resolve();
+
+  const secret = String(options.secret || "220426");
+  const configuredAttempts = Number(options.maxAttempts);
+  const maxAttempts = Number.isInteger(configuredAttempts) && configuredAttempts > 0
+    ? configuredAttempts
+    : 10;
+
+  if (!/^\d+$/.test(secret)) {
+    console.warn("Number game skipped: the secret must contain digits only.");
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const game = document.createElement("section");
+    game.className = "number-game";
+    game.setAttribute("aria-labelledby", "number-game-title");
+    game.innerHTML = `
+      <div class="number-game-card">
+        <p class="number-game-kicker">Mini game</p>
+        <h1 id="number-game-title">Đoán dãy số bí mật</h1>
+        <p class="number-game-description">
+          Nhập một dãy gồm <strong>${secret.length} chữ số</strong>.
+          Mỗi chữ số đúng vị trí được tính là một điểm.
+        </p>
+
+        <form class="number-game-form" novalidate>
+          <label class="visually-hidden" for="number-game-input">
+            Dãy số bạn dự đoán
+          </label>
+          <input
+            id="number-game-input"
+            class="number-game-input"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="${secret.length}"
+            placeholder="${"•".repeat(secret.length)}"
+            aria-describedby="number-game-status"
+          />
+          <button class="number-game-submit" type="submit">Đoán</button>
+        </form>
+
+        <div class="number-game-meta">
+          <span class="number-game-attempts">Còn ${maxAttempts} lượt</span>
+          <span>${secret.length} vị trí cần tìm</span>
+        </div>
+
+        <p class="number-game-status" id="number-game-status" aria-live="polite">
+          Hãy thử con số đầu tiên của bạn.
+        </p>
+
+        <button class="number-game-continue" type="button" hidden>
+          Tiếp tục xem lời chúc
+        </button>
+        <ol class="number-game-history" aria-label="Lịch sử dự đoán"></ol>
+      </div>
+    `;
+
+    const card = game.querySelector(".number-game-card");
+    const form = game.querySelector(".number-game-form");
+    const input = game.querySelector(".number-game-input");
+    const submit = game.querySelector(".number-game-submit");
+    const attemptsLabel = game.querySelector(".number-game-attempts");
+    const status = game.querySelector(".number-game-status");
+    const history = game.querySelector(".number-game-history");
+    const continueButton = game.querySelector(".number-game-continue");
+    let attemptsUsed = 0;
+    let isFinished = false;
+    let winConfettiAnimation = null;
+
+    const setStatus = (message, tone = "default") => {
+      status.textContent = message;
+      status.dataset.tone = tone;
+    };
+
+    const countCorrectPositions = (guess) => {
+      return [...guess].reduce((total, digit, index) => {
+        return total + (digit === secret[index] ? 1 : 0);
+      }, 0);
+    };
+
+    const addHistoryEntry = (guess, correctPositions) => {
+      const item = document.createElement("li");
+      const attempt = document.createElement("span");
+      const number = document.createElement("code");
+      const result = document.createElement("strong");
+
+      attempt.textContent = `#${attemptsUsed}`;
+      number.textContent = guess;
+      result.textContent = `${correctPositions}/${secret.length} đúng`;
+      item.append(attempt, number, result);
+      history.prepend(item);
+    };
+
+    const playWinConfetti = () => {
+      const layer = document.createElement("div");
+      const colors = [
+        CONFIG.colors.primary || "#8b5cf6",
+        CONFIG.colors.accent || "#60a5fa",
+        "#fbbf24",
+        "#34d399",
+        "#fb923c",
+        "#f1f5f9",
+      ];
+
+      layer.className = "number-game-win-confetti";
+      layer.setAttribute("aria-hidden", "true");
+
+      for (let i = 0; i < 90; i++) {
+        const piece = document.createElement("i");
+        const width = 6 + Math.random() * 6;
+
+        piece.className = "number-game-win-confetti-piece";
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.width = `${width}px`;
+        piece.style.height = `${width * (i % 3 === 0 ? 1 : 1.7)}px`;
+        piece.style.backgroundColor = colors[i % colors.length];
+        piece.dataset.startY = -30 - Math.random() * 160;
+        piece.dataset.drift = (Math.random() - 0.5) * 180;
+        piece.dataset.startRotation = (Math.random() - 0.5) * 180;
+        piece.dataset.endRotation = 540 + Math.random() * 900;
+        piece.dataset.duration = 2.2 + Math.random() * 1.2;
+        layer.appendChild(piece);
+      }
+
+      game.prepend(layer);
+      const pieces = layer.querySelectorAll(".number-game-win-confetti-piece");
+
+      winConfettiAnimation = gsap.timeline({
+        onComplete: () => {
+          layer.remove();
+          winConfettiAnimation = null;
+        },
+      });
+
+      winConfettiAnimation.fromTo(pieces,
+        {
+          x: 0,
+          y: (_, piece) => Number(piece.dataset.startY),
+          rotation: (_, piece) => Number(piece.dataset.startRotation),
+          opacity: 1,
+        },
+        {
+          x: (_, piece) => Number(piece.dataset.drift),
+          y: () => window.innerHeight + 80,
+          rotation: (_, piece) => Number(piece.dataset.endRotation),
+          opacity: 1,
+          duration: (_, piece) => Number(piece.dataset.duration),
+          stagger: { amount: 0.8, from: "random" },
+          ease: "power1.inOut",
+        }
+      );
+    };
+
+    const closeGame = () => {
+      if (isFinished) return;
+      isFinished = true;
+      if (winConfettiAnimation) winConfettiAnimation.kill();
+      gsap.to(game, {
+        opacity: 0,
+        y: -20,
+        duration: 0.5,
+        ease: "power2.inOut",
+        onComplete: () => {
+          game.remove();
+          resolve();
+        },
+      });
+    };
+
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, "").slice(0, secret.length);
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const guess = input.value;
+
+      if (guess.length !== secret.length) {
+        setStatus(`Vui lòng nhập đủ ${secret.length} chữ số.`, "error");
+        input.focus();
+        return;
+      }
+
+      attemptsUsed += 1;
+      const correctPositions = countCorrectPositions(guess);
+      const attemptsLeft = maxAttempts - attemptsUsed;
+
+      addHistoryEntry(guess, correctPositions);
+      attemptsLabel.textContent = `Còn ${attemptsLeft} lượt`;
+
+      if (correctPositions === secret.length) {
+        input.disabled = true;
+        submit.disabled = true;
+        setStatus(
+          `Chính xác! Bạn đã tìm ra dãy số sau ${attemptsUsed} lượt. Món quà đang chờ bạn!`,
+          "success"
+        );
+        continueButton.textContent = "Mở món quà 🎁";
+        continueButton.dataset.result = "win";
+        continueButton.hidden = false;
+        playWinConfetti();
+        gsap.fromTo(continueButton,
+          { opacity: 0, y: 14, scale: 0.96 },
+          {
+            opacity: 1, y: 0, scale: 1, duration: 0.5,
+            ease: "back.out(1.7)",
+          }
+        );
+        window.setTimeout(() => continueButton.focus({ preventScroll: true }), 500);
+        return;
+      }
+
+      if (attemptsUsed >= maxAttempts) {
+        form.hidden = true;
+        attemptsLabel.textContent = "Đã hết lượt";
+        continueButton.textContent = "↻ Chơi lại từ đầu";
+        continueButton.dataset.result = "retry";
+        continueButton.hidden = false;
+        setStatus(
+          `Bạn chưa tìm ra dãy số sau ${maxAttempts} lượt. Hãy tải lại trang để thử lại nhé!`,
+          "error"
+        );
+        continueButton.focus();
+        return;
+      }
+
+      setStatus(
+        `Bạn có ${correctPositions}/${secret.length} vị trí đúng. Thử lại nhé!`,
+        correctPositions > 0 ? "hint" : "default"
+      );
+      input.value = "";
+      input.focus();
+    });
+
+    continueButton.addEventListener("click", () => {
+      if (isFinished) return;
+
+      if (continueButton.dataset.result === "retry") {
+        window.location.reload();
+        return;
+      }
+
+      if (continueButton.dataset.result === "win") {
+        continueButton.disabled = true;
+        onWin();
+      }
+
+      closeGame();
+    });
+    document.body.appendChild(game);
+
+    gsap.from(card, {
+      opacity: 0,
+      y: 24,
+      scale: 0.96,
+      duration: 0.6,
+      ease: "power2.out",
+    });
+
+    window.setTimeout(() => input.focus({ preventScroll: true }), 450);
+  });
 }
 
 // ── Script Loader ────────────────────────────────────────────────
@@ -84,24 +393,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     rendered.push({ el, comp, section });
   });
 
-  // SweetAlert music prompt
-  const isDark = currentMode === "dark";
-  Swal.fire({
-    title: "Play music in the background?",
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonColor: CONFIG.colors.accent || "#3085d6",
-    cancelButtonColor: "#888",
-    confirmButtonText: "Yes!",
-    cancelButtonText: "No",
-    background: isDark ? "#1e293b" : "#ffffff",
-    color: isDark ? "#f1f5f9" : "#1e293b",
-  }).then((result) => {
-    if (result.isConfirmed && audio) {
-      audio.play().catch(() => {});
-    }
-    buildTimeline(rendered);
-  });
+  await startNumberGame(CONFIG.game, () => unlockMusicAfterWin(audio));
+  buildTimeline(rendered);
 });
 
 // ── Timeline Builder ─────────────────────────────────────────────

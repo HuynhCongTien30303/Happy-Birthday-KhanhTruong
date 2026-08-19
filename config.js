@@ -14,7 +14,7 @@
  *   "stars"         → Twinkling stars background
  *   "fireworks"     → Colorful firework sparks burst
  *   "balloons"      → Floating balloon animation
- *   "profile"       → Profile photo with birthday wish
+ *   "profile"       → Three-image gallery with captions and birthday wish
  *   "confetti"      → Confetti burst animation
  *   "closing"       → Closing message with replay button
  *
@@ -27,14 +27,13 @@
 
 const CONFIG = {
   // ── Recipient Info ────────────────────────────────────────────
-  name: "Irene",
-  photo: "./img/irene.jpg",       // Place your photo in the img/ folder
+  name: "Khanh Truong",
   music: "./music/hbd.mpeg",      // Place your music in the music/ folder
 
   // ── Theme Colors ──────────────────────────────────────────────
   // A toggle button lets the viewer switch between dark & light mode.
   colors: {
-    primary: "#f472b6",           // Main accent color (rose pink)
+    primary: "#8b5cf6",           // Main color (violet)
     accent: "#60a5fa",            // Secondary accent color (sky blue)
     dark: {
       background: "#0f172a",      // Slate 900
@@ -50,27 +49,33 @@ const CONFIG = {
   // Options: "dark" or "light"
   defaultMode: "dark",
 
+  // ── Opening Number Game ──────────────────────────────────────
+  game: {
+    enabled: true,
+    secret: "220426",
+    maxAttempts: 10,
+  },
+
   // ── Sections ──────────────────────────────────────────────────
   // Add, remove, duplicate, or reorder as you wish!
   sections: [
     {
       type: "greeting",
       title: "Hi",
-      subtitle: "I really like your name btw!",
+      subtitle: "Well... someone has a birthday today !!!",
     },
     {
       type: "countdown",
       from: 3,                    // Countdown from this number
-      goText: "🎉",              // Text shown after countdown ends
     },
     {
       type: "announcement",
-      text: "It's your birthday!! :D",
+      text: "It's your birthday!!",
     },
     {
       type: "chatbox",
       message:
-        "Happy birthday to youu!! Wishing you a wonderful year ahead filled with joy, love, and endless happiness!",
+        "Happy birthdayyy! Wishing you a wonderful year ahead filled with happiness, good health, and lots of beautiful moments. Hope you always have a reason to smile!",
       buttonText: "Send",
     },
     {
@@ -80,14 +85,14 @@ const CONFIG = {
         "But then I stopped.",
         "I realised, I wanted to do something <strong>special</strong>.",
         "Because,",
-        "You are Special <span>:)</span>",
+        "You are <span>Special</span>",
       ],
       bigLetters: "SO",
     },
     {
       type: "quote",
-      text: "The more you praise and celebrate your life, the more there is in life to celebrate.",
-      author: "Oprah Winfrey",
+      text: "What is meant for you will never require you to lose yourself.",
+      author: "CT9",
     },
     {
       type: "stars",
@@ -99,8 +104,13 @@ const CONFIG = {
     },
     {
       type: "profile",
+      images: [
+        { src: "", alt: "", caption: "" },
+        { src: "", alt: "", caption: "" },
+        { src: "", alt: "", caption: "" },
+      ],
       wishTitle: "Happy Birthday!",
-      wishText: "May the js.prototypes always be with you! ;)",
+      wishText: "May you always find more reasons to smile",
     },
     {
       type: "fireworks",

@@ -56,15 +56,30 @@
 
       // Special last line: dramatic entrance
       if (specialLine) {
+        const emphasis = specialLine.querySelector("span");
+
+        if (emphasis) {
+          tl.set(emphasis, {
+            fontWeight: 400, scale: 1, rotation: 0, x: 0,
+          });
+        }
+
         tl.fromTo(specialLine,
-          { rotationX: 15, rotationZ: -10, skewY: "-5deg", y: 50, z: 10, opacity: 0 },
-          { rotationX: 0, rotationZ: 0, skewY: "0deg", y: 0, z: 0, opacity: 1, duration: 0.7 },
+          { rotationX: 15, rotationZ: -10, skewY: "-5deg", y: 50, z: 10, scale: 1, opacity: 0 },
+          { rotationX: 0, rotationZ: 0, skewY: "0deg", y: 0, z: 0, scale: 1, opacity: 1, duration: 0.7 },
           "+=1.5"
         );
 
-        const span = specialLine.querySelector("span");
-        if (span) {
-          tl.to(span, { duration: 0.7, rotation: 90, x: 8 }, "+=1.4");
+        if (emphasis) {
+          tl.to(emphasis, {
+            duration: 0.25,
+            fontWeight: 700,
+            scale: 1.12,
+            ease: "back.out(2)",
+          }, "+=1")
+          .to(emphasis, {
+            duration: 0.2, scale: 1, ease: "power2.out",
+          });
         }
 
         tl.to(specialLine, {
