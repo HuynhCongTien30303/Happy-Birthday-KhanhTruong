@@ -68,6 +68,56 @@ body {
   background: rgba(128, 128, 128, 0.2);
 }
 
+#reading-toggle {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  z-index: 9999;
+  display: flex;
+  min-width: 132px;
+  min-height: 42px;
+  padding: 0.65rem 1rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 12px);
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease,
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+#reading-toggle.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+#reading-toggle.is-visible:hover {
+  background: color-mix(in srgb, var(--primary) 18%, var(--bg));
+  transform: translate(-50%, -2px);
+}
+
+#reading-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* ── Opening Number Game ───────────────────────────────────────── */
 .number-game {
   position: fixed;
@@ -279,8 +329,21 @@ body {
 }
 
 .number-game-continue[data-result="win"] {
+  display: block;
+  width: fit-content;
+  min-height: 44px;
+  margin-right: auto;
+  margin-bottom: 0.65rem;
+  margin-left: auto;
+  padding: 0 1.05rem;
+  font-size: 0.88rem;
   background: linear-gradient(135deg, var(--primary), var(--accent));
   box-shadow: 0 12px 30px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.number-game-continue[data-result="win"].is-teasing {
+  will-change: transform;
+  transition: filter 0.2s ease;
 }
 
 .number-game-continue[data-result="retry"] {
@@ -609,10 +672,12 @@ body {
   gap: clamp(0.55rem, 2vw, 1.2rem);
   width: min(92vw, 860px);
   align-items: stretch;
+  perspective: 1000px;
 }
 
 .profile-card {
   display: flex;
+  width: 100%;
   min-width: 0;
   margin: 0;
   overflow: hidden;
@@ -623,7 +688,7 @@ body {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transform-origin: center bottom;
+  transform-origin: center center;
   opacity: 0;
 }
 
@@ -716,14 +781,35 @@ body {
 .section-confetti {
   position: fixed !important;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  z-index: 3;
+  z-index: 5;
 }
 
-.confetti-dot {
+.confetti-piece {
   position: absolute;
-  width: 20px;
-  visibility: hidden;
+  bottom: clamp(42px, 7vh, 76px);
+  display: block;
+  border-radius: 2px;
+  opacity: 0;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.confetti-piece.from-left {
+  left: -16px;
+}
+
+.confetti-piece.from-right {
+  right: -16px;
+}
+
+.confetti-piece:nth-child(5n) {
+  border-radius: 50%;
+}
+
+.confetti-piece:nth-child(7n) {
+  height: 5px !important;
 }
 
 /* ── Closing ───────────────────────────────────────────────────── */
@@ -794,6 +880,14 @@ body {
 
   #music-toggle {
     left: 0.75rem;
+  }
+
+  #reading-toggle {
+    bottom: 0.8rem;
+    min-width: 124px;
+    min-height: 40px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.78rem;
   }
 
   .number-game {

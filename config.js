@@ -15,7 +15,7 @@
  *   "fireworks"     → Colorful firework sparks burst
  *   "balloons"      → Floating balloon animation
  *   "profile"       → Three-image gallery with captions and birthday wish
- *   "confetti"      → Confetti burst animation
+ *   "confetti"      → Side-cannon confetti animation
  *   "closing"       → Closing message with replay button
  *
  * HOW TO USE:
@@ -28,7 +28,8 @@
 const CONFIG = {
   // ── Recipient Info ────────────────────────────────────────────
   name: "Khanh Truong",
-  music: "./music/hbd.mpeg",      // Place your music in the music/ folder
+  music: "./music/ILoveYouSo.mp3",      // Place your music in the music/ folder
+  musicVolume: 0.6,                      // Music volume: 0 (mute) to 1 (maximum)
 
   // ── Theme Colors ──────────────────────────────────────────────
   // A toggle button lets the viewer switch between dark & light mode.
@@ -54,6 +55,7 @@ const CONFIG = {
     enabled: true,
     secret: "220426",
     maxAttempts: 10,
+    giftButtonTeaseSeconds: 6,       // Seconds the gift button dodges the mouse; use 0 to disable
   },
 
   // ── Sections ──────────────────────────────────────────────────
@@ -105,7 +107,7 @@ const CONFIG = {
     {
       type: "profile",
       images: [
-        { src: "", alt: "", caption: "" },
+        { src: "img/KhanhTruong_1.jpg", alt: "", caption: "Đây là lúc kẹt máy tập ông thay thế bằng 1 bài tập khác rất kì nhưng cũng rất tếu" },
         { src: "", alt: "", caption: "" },
         { src: "", alt: "", caption: "" },
       ],
@@ -118,7 +120,8 @@ const CONFIG = {
     },
     {
       type: "confetti",
-      count: 9,
+      count: 120,
+      duration: 6,
     },
     {
       type: "closing",

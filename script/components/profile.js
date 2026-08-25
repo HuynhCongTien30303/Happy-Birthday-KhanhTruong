@@ -8,6 +8,8 @@
 
       const gallery = document.createElement("div");
       gallery.className = "profile-gallery";
+      gallery.setAttribute("role", "region");
+      gallery.setAttribute("aria-label", "Trình chiếu ảnh");
 
       const images = Array.from({ length: 3 }, (_, index) => {
         return (section.images && section.images[index]) || {};
@@ -19,6 +21,7 @@
         const caption = document.createElement("figcaption");
 
         figure.className = "profile-card";
+        figure.setAttribute("aria-label", `Ảnh ${index + 1} / ${images.length}`);
         media.className = "profile-media";
         caption.className = "profile-caption";
 
@@ -91,85 +94,110 @@
       const gallery = el.querySelector(".profile-gallery");
       const cards = [...el.querySelectorAll(".profile-card")];
       const wish = el.querySelector(".wish");
+      const captionWords = [...el.querySelectorAll(".profile-caption-word")];
+      const imageHoldDuration = 4;
+      const transitionDuration = 1;
       const galleryRect = gallery.getBoundingClientRect();
-      const focusedWidth = Math.min(galleryRect.width * 0.56, 380);
-      const imageHoldDuration = 7.6;
-
+      const focusedWidth = Math.min(galleryRect.width * 0.88, 410);
+      const slideDistance = Math.min(galleryRect.width * 0.22, 150);
       const focusStates = cards.map((card) => {
         const cardRect = card.getBoundingClientRect();
-        const cardCenterX = cardRect.left + cardRect.width / 2;
-        const cardCenterY = cardRect.top + cardRect.height / 2;
-        const galleryCenterX = galleryRect.left + galleryRect.width / 2;
-        const galleryCenterY = galleryRect.top + galleryRect.height / 2;
 
         return {
-          x: galleryCenterX - cardCenterX,
-          y: galleryCenterY - cardCenterY,
-          scale: Math.min(
-            1.9,
-            Math.max(1.2, focusedWidth / Math.max(cardRect.width, 1))
-          ),
+          x: galleryRect.left + galleryRect.width / 2
+            - (cardRect.left + cardRect.width / 2),
+          y: galleryRect.top + galleryRect.height / 2
+            - (cardRect.top + cardRect.height / 2),
+          scale: Math.min(3.2, focusedWidth / Math.max(cardRect.width, 1)),
         };
       });
 
-      // Each photo gets its own scene. Together these scenes last about 30 seconds.
       tl.set(wish, { opacity: 0 })
         .set(cards, {
-          x: (index) => focusStates[index].x,
+          x: (index) => focusStates[index].x + slideDistance,
           y: (index) => focusStates[index].y,
-          scale: (index) => focusStates[index].scale,
-          rotation: 0,
+          scale: (index) => focusStates[index].scale * 0.94,
+          rotation: 2,
           opacity: 0,
           zIndex: 1,
-        });
+        })
+        .set(captionWords, { opacity: 0, y: 9 });
 
-      cards.forEach((card) => {
+      cards.forEach((card, index) => {
         const media = card.querySelector(".profile-media");
-        const captionWords = card.querySelectorAll(".profile-caption-word");
+        const words = card.querySelectorAll(".profile-caption-word");
+        const transitionLabel = `profileSlide${index}`;
 
-        tl.set(card, { zIndex: 4 })
-          .to(card, {
-            opacity: 1, duration: 0.8, ease: "power2.out",
-          })
-          .fromTo(media,
-            { scale: 1.08, filter: "blur(4px)" },
-            { scale: 1, filter: "blur(0px)", duration: 0.9, ease: "power2.out" },
-            "<"
-          );
+        tl.addLabel(transitionLabel);
 
-        if (captionWords.length) {
-          tl.fromTo(captionWords,
-            { opacity: 0, y: 8 },
-            {
+        if (index === 0) {
+          tl.set(card, {
+            x: focusStates[index].x,
+            rotation: 0,
+            zIndex: 3,
+          }, transitionLabel)
+            .to(card, {
               opacity: 1,
-              y: 0,
-              duration: 0.25,
-              stagger: Math.min(0.12, 1 / captionWords.length),
-              ease: "power2.out",
-            },
-            "-=0.15"
-          );
+              scale: focusStates[index].scale,
+              duration: transitionDuration,
+              ease: "power3.out",
+            }, transitionLabel);
+        } else {
+          const previousCard = cards[index - 1];
+
+          tl.set(card, { zIndex: 3 }, transitionLabel)
+            .to(previousCard, {
+              x: focusStates[index - 1].x - slideDistance,
+              scale: focusStates[index - 1].scale * 0.92,
+              rotation: -2,
+              opacity: 0,
+              duration: transitionDuration,
+              ease: "power2.inOut",
+            }, transitionLabel)
+            .to(card, {
+              x: focusStates[index].x,
+              y: focusStates[index].y,
+              scale: focusStates[index].scale,
+              rotation: 0,
+              opacity: 1,
+              duration: transitionDuration,
+              ease: "power3.out",
+            }, `${transitionLabel}+=0.14`)
+            .set(previousCard, { zIndex: 1 }, `${transitionLabel}+=${transitionDuration}`);
         }
 
-        tl.to(card, { duration: imageHoldDuration })
-          .to(card, {
-            opacity: 0, duration: 0.65, ease: "power2.in",
-          })
-          .set(card, { zIndex: 1 });
+        tl.fromTo(media,
+          { scale: 1.1, filter: "blur(5px)" },
+          { scale: 1, filter: "blur(0px)", duration: 1.1, ease: "power2.out" },
+          transitionLabel
+        );
+
+        if (words.length) {
+          tl.to(words, {
+            opacity: 1,
+            y: 0,
+            duration: 0.28,
+            stagger: Math.min(0.1, 0.8 / words.length),
+            ease: "power2.out",
+          }, `${transitionLabel}+=0.25`);
+        }
+
+        tl.to(card, { duration: imageHoldDuration });
       });
 
-      // Bring all three photos back into the final gallery before the wish appears.
+      // Expand the slideshow back into a three-photo gallery for the ending.
       tl.to(cards, {
         x: 0,
         y: 0,
         scale: 1,
+        rotation: 0,
         opacity: 1,
         duration: 1.15,
         stagger: 0.12,
         ease: "power3.out",
       })
       .set(cards, { zIndex: 1 })
-      .set(wish, { opacity: 1 }, "+=0.5")
+      .set(wish, { opacity: 1 }, "+=0.35")
       // Wish title letters stagger in
       .from(el.querySelectorAll(".wish-hbd span"), {
         duration: 0.5, opacity: 0, y: -30,

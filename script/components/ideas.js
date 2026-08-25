@@ -48,7 +48,7 @@
           tl.to(strong, {
             duration: 0.5, scale: 1.2, x: 10,
             backgroundColor: "var(--accent)", color: "#fff",
-          });
+          }, "+=0.8");
         }
 
         tl.to(line, { duration: 0.7, ...LEAVE }, "+=2.5");

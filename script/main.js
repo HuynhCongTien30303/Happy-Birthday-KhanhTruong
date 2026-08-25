@@ -77,6 +77,45 @@ function unlockMusicAfterWin(audio) {
   audio.play().catch(() => {});
 }
 
+// ── Reading Pause ───────────────────────────────────────────────
+const READING_SECTION_TYPES = new Set(["chatbox", "ideas", "quote", "profile"]);
+
+function createReadingToggle(timeline) {
+  const btn = document.createElement("button");
+  btn.id = "reading-toggle";
+  btn.type = "button";
+  btn.setAttribute("aria-live", "polite");
+  btn.setAttribute("aria-hidden", "true");
+
+  const updateButton = () => {
+    const isPaused = timeline.paused();
+    btn.textContent = isPaused ? "▶ Continue" : "⏸ Pause";
+    btn.title = isPaused ? "Continue" : "Pause";
+    btn.setAttribute("aria-label", btn.title);
+    btn.setAttribute("aria-pressed", String(isPaused));
+  };
+
+  btn.addEventListener("click", () => {
+    if (timeline.paused()) {
+      timeline.resume();
+    } else {
+      timeline.pause();
+    }
+    updateButton();
+  });
+
+  document.body.appendChild(btn);
+  updateButton();
+
+  return {
+    setVisible(isVisible) {
+      btn.classList.toggle("is-visible", isVisible);
+      btn.setAttribute("aria-hidden", String(!isVisible));
+      if (isVisible) updateButton();
+    },
+  };
+}
+
 // ── Opening Number Game ─────────────────────────────────────────
 function startNumberGame(options = {}, onWin = () => {}) {
   if (options.enabled === false) return Promise.resolve();
@@ -86,6 +125,11 @@ function startNumberGame(options = {}, onWin = () => {}) {
   const maxAttempts = Number.isInteger(configuredAttempts) && configuredAttempts > 0
     ? configuredAttempts
     : 10;
+  const configuredTeaseSeconds = Number(options.giftButtonTeaseSeconds);
+  const giftButtonTeaseSeconds = Number.isFinite(configuredTeaseSeconds)
+    && configuredTeaseSeconds >= 0
+    ? configuredTeaseSeconds
+    : 6;
 
   if (!/^\d+$/.test(secret)) {
     console.warn("Number game skipped: the secret must contain digits only.");
@@ -149,6 +193,11 @@ function startNumberGame(options = {}, onWin = () => {}) {
     let attemptsUsed = 0;
     let isFinished = false;
     let winConfettiAnimation = null;
+    let giftButtonMoveTween = null;
+    let giftButtonTeaseTimer = null;
+    let giftButtonBaseRect = null;
+    let isGiftButtonTeasing = false;
+    let hasGiftButtonTeased = false;
 
     const setStatus = (message, tone = "default") => {
       status.textContent = message;
@@ -234,10 +283,93 @@ function startNumberGame(options = {}, onWin = () => {}) {
       );
     };
 
+    const moveGiftButton = (pointerX, pointerY) => {
+      if (!isGiftButtonTeasing || !giftButtonBaseRect) return;
+
+      const cardRect = card.getBoundingClientRect();
+      const padding = 14;
+      const safeLeft = Math.max(cardRect.left + padding, padding);
+      const safeRight = Math.min(cardRect.right - padding, window.innerWidth - padding);
+      const safeTop = Math.max(cardRect.top + padding, padding);
+      const safeBottom = Math.min(cardRect.bottom - padding, window.innerHeight - padding);
+      const minX = safeLeft - giftButtonBaseRect.left;
+      const maxX = safeRight - giftButtonBaseRect.right;
+      const minY = safeTop - giftButtonBaseRect.top;
+      const maxY = safeBottom - giftButtonBaseRect.bottom;
+      let nextX = 0;
+      let nextY = 0;
+
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const candidateX = gsap.utils.random(minX, maxX);
+        const candidateY = gsap.utils.random(minY, maxY);
+        const candidateCenterX = giftButtonBaseRect.left
+          + giftButtonBaseRect.width / 2 + candidateX;
+        const candidateCenterY = giftButtonBaseRect.top
+          + giftButtonBaseRect.height / 2 + candidateY;
+
+        nextX = candidateX;
+        nextY = candidateY;
+        if (Math.hypot(candidateCenterX - pointerX, candidateCenterY - pointerY) > 120) {
+          break;
+        }
+      }
+
+      if (giftButtonMoveTween) giftButtonMoveTween.kill();
+      giftButtonMoveTween = gsap.to(continueButton, {
+        x: nextX,
+        y: nextY,
+        rotation: gsap.utils.random(-4, 4),
+        duration: 0.16,
+        ease: "power3.out",
+        overwrite: true,
+      });
+    };
+
+    const finishGiftButtonTease = () => {
+      if (!isGiftButtonTeasing) return;
+
+      isGiftButtonTeasing = false;
+      hasGiftButtonTeased = true;
+      giftButtonTeaseTimer = null;
+      continueButton.classList.remove("is-teasing");
+      setStatus("Giỡn một xíu thôi 😄 Giờ ông có thể mở quà rồi!", "success");
+
+      if (giftButtonMoveTween) giftButtonMoveTween.kill();
+      giftButtonMoveTween = null;
+      gsap.set(continueButton, { clearProps: "transform" });
+    };
+
+    const startGiftButtonTease = (event) => {
+      const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+      if (
+        !supportsHover
+        || giftButtonTeaseSeconds <= 0
+        || continueButton.dataset.result !== "win"
+        || hasGiftButtonTeased
+      ) {
+        return;
+      }
+
+      if (!isGiftButtonTeasing) {
+        isGiftButtonTeasing = true;
+        giftButtonBaseRect = continueButton.getBoundingClientRect();
+        continueButton.classList.add("is-teasing");
+        setStatus("","hint");
+        giftButtonTeaseTimer = window.setTimeout(
+          finishGiftButtonTease,
+          giftButtonTeaseSeconds * 1000
+        );
+      }
+
+      moveGiftButton(event.clientX, event.clientY);
+    };
+
     const closeGame = () => {
       if (isFinished) return;
       isFinished = true;
       if (winConfettiAnimation) winConfettiAnimation.kill();
+      if (giftButtonMoveTween) giftButtonMoveTween.kill();
+      if (giftButtonTeaseTimer) window.clearTimeout(giftButtonTeaseTimer);
       gsap.to(game, {
         opacity: 0,
         y: -20,
@@ -315,8 +447,20 @@ function startNumberGame(options = {}, onWin = () => {}) {
       input.focus();
     });
 
-    continueButton.addEventListener("click", () => {
+    continueButton.addEventListener("pointerenter", startGiftButtonTease);
+
+    continueButton.addEventListener("click", (event) => {
       if (isFinished) return;
+
+      if (
+        continueButton.dataset.result === "win"
+        && isGiftButtonTeasing
+        && event.detail > 0
+      ) {
+        event.preventDefault();
+        moveGiftButton(event.clientX, event.clientY);
+        return;
+      }
 
       if (continueButton.dataset.result === "retry") {
         window.location.reload();
@@ -363,6 +507,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Set music source
   const audio = document.querySelector(".song");
   if (audio && CONFIG.music) {
+    audio.volume = Math.min(1, Math.max(0, Number(CONFIG.musicVolume ?? 1)));
     audio.querySelector("source").src = CONFIG.music;
     audio.load();
   }
@@ -400,6 +545,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ── Timeline Builder ─────────────────────────────────────────────
 function buildTimeline(rendered) {
   const tl = gsap.timeline();
+  const readingToggle = createReadingToggle(tl);
 
   tl.to(".container", { duration: 0.6, visibility: "visible" });
 
@@ -413,6 +559,11 @@ function buildTimeline(rendered) {
     if (!isOverlay && deferredExits.length > 0) {
       deferredExits.forEach((fn) => fn());
       deferredExits = [];
+    }
+
+    if (!isOverlay) {
+      const canPauseForReading = READING_SECTION_TYPES.has(section.type);
+      tl.call(() => readingToggle.setVisible(canPauseForReading));
     }
 
     // Animate
