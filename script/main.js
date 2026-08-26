@@ -77,43 +77,181 @@ function unlockMusicAfterWin(audio) {
   audio.play().catch(() => {});
 }
 
-// ── Reading Pause ───────────────────────────────────────────────
-const READING_SECTION_TYPES = new Set(["chatbox", "ideas", "quote", "profile"]);
+// ── Touch-device Handoff ───────────────────────────────────────
+const TOUCH_HANDOFF_SESSION_KEY = "birthday-touch-handoff-dismissed";
 
-function createReadingToggle(timeline) {
-  const btn = document.createElement("button");
-  btn.id = "reading-toggle";
-  btn.type = "button";
-  btn.setAttribute("aria-live", "polite");
-  btn.setAttribute("aria-hidden", "true");
+function isTouchDevice() {
+  return navigator.maxTouchPoints > 0
+    || window.matchMedia("(pointer: coarse)").matches
+    || "ontouchstart" in window;
+}
 
-  const updateButton = () => {
-    const isPaused = timeline.paused();
-    btn.textContent = isPaused ? "▶ Continue" : "⏸ Pause";
-    btn.title = isPaused ? "Continue" : "Pause";
-    btn.setAttribute("aria-label", btn.title);
-    btn.setAttribute("aria-pressed", String(isPaused));
-  };
+function wasTouchHandoffDismissed() {
+  try {
+    return window.sessionStorage.getItem(TOUCH_HANDOFF_SESSION_KEY) === "true";
+  } catch (error) {
+    return false;
+  }
+}
 
-  btn.addEventListener("click", () => {
-    if (timeline.paused()) {
-      timeline.resume();
+function rememberTouchHandoffDismissal() {
+  try {
+    window.sessionStorage.setItem(TOUCH_HANDOFF_SESSION_KEY, "true");
+  } catch (error) {
+    // Continue normally when session storage is unavailable.
+  }
+}
+
+function getGiftPageUrl() {
+  return String(CONFIG.giftUrl || window.location.href);
+}
+
+function getGiftPageUrlLabel() {
+  const giftUrl = getGiftPageUrl();
+
+  try {
+    const parsedUrl = new URL(giftUrl);
+    return `${parsedUrl.hostname}${decodeURIComponent(parsedUrl.pathname)}`;
+  } catch (error) {
+    return giftUrl;
+  }
+}
+
+function copyCurrentPageUrl() {
+  const url = getGiftPageUrl();
+
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(url);
+  }
+
+  return new Promise((resolve, reject) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = url;
+    textarea.setAttribute("readonly", "");
+    textarea.className = "touch-handoff-copy-helper";
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    const didCopy = document.execCommand("copy");
+    textarea.remove();
+
+    if (didCopy) {
+      resolve();
     } else {
-      timeline.pause();
+      reject(new Error("Unable to copy the page URL."));
     }
-    updateButton();
   });
+}
 
-  document.body.appendChild(btn);
-  updateButton();
+function startTouchHandoff() {
+  if (!isTouchDevice() || wasTouchHandoffDismissed()) {
+    return Promise.resolve();
+  }
 
-  return {
-    setVisible(isVisible) {
-      btn.classList.toggle("is-visible", isVisible);
-      btn.setAttribute("aria-hidden", String(!isVisible));
-      if (isVisible) updateButton();
-    },
-  };
+  return new Promise((resolve) => {
+    const handoff = document.createElement("section");
+    handoff.className = "touch-handoff";
+    handoff.setAttribute("role", "dialog");
+    handoff.setAttribute("aria-modal", "true");
+    handoff.setAttribute("aria-labelledby", "touch-handoff-title");
+    handoff.innerHTML = `
+      <div class="touch-handoff-card">
+        <h1 id="touch-handoff-title">
+          Món quà này sẽ đẹp hơn trên màn hình lớn ✨
+        </h1>
+        <p class="touch-handoff-description">
+          Hãy gửi nó sang laptop của ông nha.
+        </p>
+        <div class="touch-handoff-headphones">
+          <span class="touch-handoff-headphones-icon" aria-hidden="true">🎧</span>
+          <span>Đeo tai nghe để có trải nghiệm tốt nhất</span>
+        </div>
+        <div class="touch-handoff-actions">
+          <div class="touch-handoff-copy-panel">
+            <span class="touch-handoff-link-value"></span>
+            <button class="touch-handoff-copy" type="button">
+              <span class="touch-handoff-copy-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M8 7V5.8C8 4.8 8.8 4 9.8 4h8.4c1 0 1.8.8 1.8 1.8v8.4c0 1-.8 1.8-1.8 1.8H17"/>
+                  <rect x="4" y="8" width="12" height="12" rx="2"/>
+                </svg>
+              </span>
+              <span class="touch-handoff-copy-label">Sao chép</span>
+            </button>
+          </div>
+          <p class="touch-handoff-status" aria-live="polite">
+            Sao chép rồi gửi qua Zalo hoặc Messenger để mở trên laptop nha.
+          </p>
+          <button class="touch-handoff-continue" type="button">
+            Xem luôn trên điện thoại
+          </button>
+        </div>
+      </div>
+    `;
+
+    const card = handoff.querySelector(".touch-handoff-card");
+    const copyButton = handoff.querySelector(".touch-handoff-copy");
+    const copyButtonIcon = handoff.querySelector(".touch-handoff-copy-icon");
+    const copyButtonLabel = handoff.querySelector(".touch-handoff-copy-label");
+    const continueButton = handoff.querySelector(".touch-handoff-continue");
+    const linkValue = handoff.querySelector(".touch-handoff-link-value");
+    const status = handoff.querySelector(".touch-handoff-status");
+    let isClosing = false;
+
+    linkValue.textContent = getGiftPageUrlLabel();
+    linkValue.title = getGiftPageUrl();
+
+    copyButton.addEventListener("click", async () => {
+      copyButton.disabled = true;
+      copyButton.classList.remove("is-copied");
+
+      try {
+        await copyCurrentPageUrl();
+        copyButton.classList.add("is-copied");
+        copyButtonIcon.textContent = "✓";
+        copyButtonLabel.textContent = "Đã chép";
+        status.textContent = "Đã sao chép! Giờ gửi đường link sang laptop của ông nha.";
+        status.dataset.tone = "success";
+      } catch (error) {
+        copyButtonIcon.textContent = "↻";
+        copyButtonLabel.textContent = "Thử sao chép lại";
+        status.textContent = "Chưa sao chép được. Ông thử nhấn giữ đường link trên thanh địa chỉ nha.";
+        status.dataset.tone = "error";
+      } finally {
+        copyButton.disabled = false;
+      }
+    });
+
+    continueButton.addEventListener("click", () => {
+      if (isClosing) return;
+      isClosing = true;
+      copyButton.disabled = true;
+      continueButton.disabled = true;
+      rememberTouchHandoffDismissal();
+
+      gsap.to(handoff, {
+        opacity: 0,
+        y: -18,
+        duration: 0.45,
+        ease: "power2.inOut",
+        onComplete: () => {
+          handoff.remove();
+          resolve();
+        },
+      });
+    });
+
+    document.body.appendChild(handoff);
+    gsap.from(card, {
+      opacity: 0,
+      y: 26,
+      scale: 0.96,
+      duration: 0.65,
+      ease: "power3.out",
+    });
+    window.setTimeout(() => copyButton.focus({ preventScroll: true }), 450);
+  });
 }
 
 // ── Opening Number Game ─────────────────────────────────────────
@@ -503,6 +641,7 @@ function loadScript(src) {
 document.addEventListener("DOMContentLoaded", async () => {
   applyTheme(currentMode);
   createThemeToggle();
+  const touchHandoff = startTouchHandoff();
 
   // Set music source
   const audio = document.querySelector(".song");
@@ -516,9 +655,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const types = [...new Set(CONFIG.sections.map((s) => s.type))];
 
   // Dynamically load component scripts
+  const assetVersion = encodeURIComponent(CONFIG.assetVersion || "1");
   for (const type of types) {
     try {
-      await loadScript(`./script/components/${type}.js`);
+      await loadScript(`./script/components/${type}.js?v=${assetVersion}`);
     } catch (e) {
       console.warn(e.message);
     }
@@ -538,6 +678,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     rendered.push({ el, comp, section });
   });
 
+  await touchHandoff;
   await startNumberGame(CONFIG.game, () => unlockMusicAfterWin(audio));
   buildTimeline(rendered);
 });
@@ -545,7 +686,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ── Timeline Builder ─────────────────────────────────────────────
 function buildTimeline(rendered) {
   const tl = gsap.timeline();
-  const readingToggle = createReadingToggle(tl);
 
   tl.to(".container", { duration: 0.6, visibility: "visible" });
 
@@ -559,11 +699,6 @@ function buildTimeline(rendered) {
     if (!isOverlay && deferredExits.length > 0) {
       deferredExits.forEach((fn) => fn());
       deferredExits = [];
-    }
-
-    if (!isOverlay) {
-      const canPauseForReading = READING_SECTION_TYPES.has(section.type);
-      tl.call(() => readingToggle.setVisible(canPauseForReading));
     }
 
     // Animate

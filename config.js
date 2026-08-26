@@ -10,12 +10,14 @@
  *   "chatbox"       → Chat message with typing animation
  *   "ideas"         → Sequential text reveals, one by one
  *   "quote"         → Styled quote card with optional author
+ *   "memory"        → Secret-number memory reveal with two countdowns
  *   "countdown"     → Animated 3-2-1 countdown
  *   "stars"         → Twinkling stars background
  *   "fireworks"     → Colorful firework sparks burst
  *   "balloons"      → Floating balloon animation
  *   "profile"       → Three-image gallery with captions and birthday wish
  *   "confetti"      → Side-cannon confetti animation
+ *   "voice"         → Duck the music and play a recorded voice message
  *   "closing"       → Closing message with replay button
  *
  * HOW TO USE:
@@ -27,7 +29,9 @@
 
 const CONFIG = {
   // ── Recipient Info ────────────────────────────────────────────
-  name: "Khanh Truong",
+  name: "Khánh Trường",
+  assetVersion: "20260826-voice-button-3",
+  giftUrl: "https://huynhcongtien30303.github.io/Happy-Birthday-KhanhTruong/",
   music: "./music/ILoveYouSo.mp3",      // Place your music in the music/ folder
   musicVolume: 0.6,                      // Music volume: 0 (mute) to 1 (maximum)
 
@@ -64,7 +68,7 @@ const CONFIG = {
     {
       type: "greeting",
       title: "Hi",
-      subtitle: "Well... someone has a birthday today !!!",
+      subtitle: "Weoooo... hôm nay sinh nhật của ai nè!!!",
     },
     {
       type: "countdown",
@@ -77,24 +81,33 @@ const CONFIG = {
     {
       type: "chatbox",
       message:
-        "Happy birthdayyy! Wishing you a wonderful year ahead filled with happiness, good health, and lots of beautiful moments. Hope you always have a reason to smile!",
+        "Happy Birthdayyy!!! Chúc ông tủi mới tràn ngập niềm vui, sức khỏe dồi dào và gặp nhiều mai mắn. Mong rằng ông sẽ luôn có lý do để mỉm cười!",
       buttonText: "Send",
     },
     {
       type: "ideas",
       lines: [
-        "That's what I was going to do.",
-        "But then I stopped.",
-        "I realised, I wanted to do something <strong>special</strong>.",
-        "Because,",
-        "You are <span>Special</span>",
+        "Ban đầu tui định làm đơn giản thoi",
+        "Nhưng tui nghĩ lại",
+        "Tui muốn làm một điều gì đó thật <strong>đặc biệt</strong>",
+        "Vì...",
+        "Ông là người <span>đặc biệt</span>",
       ],
       bigLetters: "SO",
     },
     {
       type: "quote",
-      text: "What is meant for you will never require you to lose yourself.",
+      text: "Thứ dành cho bạn, sẽ không khiến bạn phải đánh mất chính mình.",
       author: "CT9",
+    },
+    {
+      type: "memory",
+      question: "Ông có biết dãy số ở trò chơi đầu tiên có ý nghĩa gì khum???",
+      prompt: "Đoán thử đi kkk",
+      hint: "Gợi ý xíu nè: đó là một mốc thời gian",
+      revealTitle: "Đoán ra chưa?",
+      revealText: "Đó là ngày đầu tiên tui gặp ông ở công ty. Hehe, đoán đúng khum",
+      countdownFrom: 5,
     },
     {
       type: "stars",
@@ -112,7 +125,7 @@ const CONFIG = {
         { src: "", alt: "", caption: "" },
       ],
       wishTitle: "Happy Birthday!",
-      wishText: "May you always find more reasons to smile",
+      wishText: "Luôn vui vẻ và mỉn cười nhé ông. Biết sao hong vì ông cười rất đẹp, rất dễ thương.",
     },
     {
       type: "fireworks",
@@ -124,8 +137,15 @@ const CONFIG = {
       duration: 6,
     },
     {
+      type: "voice",
+      text: "Có cái này tui muốn tự nói…",
+      buttonText: "Phát lời nhắn",
+      audio: "music/hbd.mpeg", // Thêm file ghi âm của bạn vào đường dẫn này
+      duckVolume: 0.12,                   // Âm lượng nhạc nền trong lúc phát lời thoại
+    },
+    {
       type: "closing",
-      text: "Okay, now come back and tell me if you liked it.",
+      text: "Oke, vậy là hết rồi. Giờ quay lại nói tui nghe xem ông có thích món quà này hong nhé!",
       replayText: "Or click, if you want to watch it again.",
     },
   ],
