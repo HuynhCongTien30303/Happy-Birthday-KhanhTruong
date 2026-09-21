@@ -81,7 +81,7 @@ const CONFIG = {
     {
       type: "chatbox",
       message:
-        "Happy Birthdayyy!!! Chúc ông tủi mới tràn ngập niềm vui, sức khỏe dồi dào và gặp nhiều mai mắn. Mong rằng ông sẽ luôn có lý do để mỉm cười!",
+        "Happy Birthdayyy!!! 🎂🎉. Chúc ông tủi mới tràn ngập niềm vui, sức khỏe và gặp thật nhiều may mắn nha! Mong ông sẽ có thêm thật nhiều ngày vui, nhiều chuyện hay ho để nhớ, gặp được những người thú vị và có thật nhiều khoảnh khắc mà sau này nhìn lại vẫn thấy vui vì ngày đó mình đã có mặt",
       buttonText: "Send",
     },
     {
@@ -96,17 +96,12 @@ const CONFIG = {
       bigLetters: "SO",
     },
     {
-      type: "quote",
-      text: "Thứ dành cho bạn, sẽ không khiến bạn phải đánh mất chính mình.",
-      author: "CT9",
-    },
-    {
       type: "memory",
       question: "Ông có biết dãy số ở trò chơi đầu tiên có ý nghĩa gì khum???",
       prompt: "Đoán thử đi kkk",
       hint: "Gợi ý xíu nè: đó là một mốc thời gian",
       revealTitle: "Đoán ra chưa?",
-      revealText: "Đó là ngày đầu tiên tui gặp ông ở công ty. Hehe, đoán đúng khum",
+      revealText: "Đó là một ngày mà từ đó câu chuyện này bắt đầu.",
       countdownFrom: 5,
     },
     {
@@ -121,11 +116,11 @@ const CONFIG = {
       type: "profile",
       images: [
         { src: "img/KhanhTruong_1.jpg", alt: "", caption: "Đây là lúc kẹt máy tập ông thay thế bằng 1 bài tập khác rất kì nhưng cũng rất tếu" },
-        { src: "", alt: "", caption: "" },
+        { src: "img/KhanhTruong_2.jpg", alt: "", caption: "Này là hình lúc đi ăn bòa. Bận cái áo màu đỏ mà tui khen đẹp. Ê mà áo đó đẹp thiệt" },
         { src: "", alt: "", caption: "" },
       ],
       wishTitle: "Happy Birthday!",
-      wishText: "Luôn vui vẻ và mỉn cười nhé ông. Biết sao hong vì ông cười rất đẹp, rất dễ thương.",
+      wishText: "Luôn vui vẻ, ít nhậu lại và khum được hút thuốc. Dễ thường thì phải cười nhiều :)",
     },
     {
       type: "fireworks",
