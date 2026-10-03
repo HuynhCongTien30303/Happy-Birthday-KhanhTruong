@@ -341,7 +341,7 @@ function startNumberGame(options = {}, onWin = () => {}) {
         </div>
 
         <p class="number-game-status" id="number-game-status" aria-live="polite">
-          Ráng giải nhe quà hơi VIP nếu mà khó quá nhắn tui tui gợi ý
+          Ráng giải đố nhe quà hơi VIP nếu mà khó quá nhắn tui, tui gợi ý cho
         </p>
 
         <button class="number-game-continue" type="button" hidden>
