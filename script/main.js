@@ -80,10 +80,22 @@ function unlockMusicAfterWin(audio) {
 // ── Touch-device Handoff ───────────────────────────────────────
 const TOUCH_HANDOFF_SESSION_KEY = "birthday-touch-handoff-dismissed";
 
+// Cạnh ngắn của viewport nhỏ hơn mức này được coi là màn hình điện thoại.
+// Dùng cạnh ngắn để điện thoại xoay ngang vẫn được nhận diện đúng.
+const SMALL_SCREEN_MAX_SIDE = 768;
+
 function isTouchDevice() {
   return navigator.maxTouchPoints > 0
     || window.matchMedia("(pointer: coarse)").matches
     || "ontouchstart" in window;
+}
+
+function isSmallScreen() {
+  return Math.min(window.innerWidth, window.innerHeight) < SMALL_SCREEN_MAX_SIDE;
+}
+
+function isPhoneScreen() {
+  return isTouchDevice() && isSmallScreen();
 }
 
 function wasTouchHandoffDismissed() {
@@ -145,7 +157,7 @@ function copyCurrentPageUrl() {
 }
 
 function startTouchHandoff() {
-  if (!isTouchDevice() || wasTouchHandoffDismissed()) {
+  if (!isPhoneScreen() || wasTouchHandoffDismissed()) {
     return Promise.resolve();
   }
 
@@ -255,10 +267,29 @@ function startTouchHandoff() {
 }
 
 // ── Opening Number Game ─────────────────────────────────────────
+// The answer is stored encoded in config.js so it can't be read at a glance.
+// To change it, encode the new digits with the same XOR key + base64:
+//   node -e 'const k="hb26-kt!x",s="NEWDIGITS";console.log(Buffer.from([...s].map((c,i)=>String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))).join(""),"latin1").toString("base64"))'
+function decodeGameSecret(encoded) {
+  const key = "hb26-kt!x";
+
+  try {
+    return [...atob(String(encoded || ""))]
+      .map((char, index) => String.fromCharCode(
+        char.charCodeAt(0) ^ key.charCodeAt(index % key.length)
+      ))
+      .join("");
+  } catch (error) {
+    return "";
+  }
+}
+
+window.decodeGameSecret = decodeGameSecret;
+
 function startNumberGame(options = {}, onWin = () => {}) {
   if (options.enabled === false) return Promise.resolve();
 
-  const secret = String(options.secret || "220426");
+  const secret = decodeGameSecret(options.secretCode);
   const configuredAttempts = Number(options.maxAttempts);
   const maxAttempts = Number.isInteger(configuredAttempts) && configuredAttempts > 0
     ? configuredAttempts
@@ -284,7 +315,7 @@ function startNumberGame(options = {}, onWin = () => {}) {
         <h1 id="number-game-title">Đoán dãy số bí mật</h1>
         <p class="number-game-description">
           Nhập một dãy gồm <strong>${secret.length} chữ số</strong>.
-          Mỗi chữ số đúng vị trí được tính là một điểm.
+          Mỗi chữ số đúng vị trí được tính là một điểm. Nếu mà thua thì load lại trang để chơi tiếp chứ hỏng có mất quà đâu kkk
         </p>
 
         <form class="number-game-form" novalidate>
@@ -310,7 +341,7 @@ function startNumberGame(options = {}, onWin = () => {}) {
         </div>
 
         <p class="number-game-status" id="number-game-status" aria-live="polite">
-          Hãy thử con số đầu tiên của bạn.
+          Ráng giải nhe quà hơi VIP nếu mà khó quá nhắn tui tui gợi ý
         </p>
 
         <button class="number-game-continue" type="button" hidden>

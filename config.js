@@ -57,7 +57,7 @@ const CONFIG = {
   // ── Opening Number Game ──────────────────────────────────────
   game: {
     enabled: true,
-    secret: "220426",
+    secretCode: "WlACAh9d",          // Encoded answer; see decodeGameSecret() in script/main.js
     maxAttempts: 10,
     giftButtonTeaseSeconds: 6,       // Seconds the gift button dodges the mouse; use 0 to disable
   },
@@ -87,7 +87,7 @@ const CONFIG = {
     {
       type: "ideas",
       lines: [
-        "Ban đầu tui định làm đơn giản thoi",
+        "Ban đầu tui định làm 1 cái gì đó đơn giản thoi",
         "Nhưng tui nghĩ lại",
         "Tui muốn làm một điều gì đó thật <strong>đặc biệt</strong>",
         "Vì...",
@@ -100,7 +100,7 @@ const CONFIG = {
       question: "Ông có biết dãy số ở trò chơi đầu tiên có ý nghĩa gì khum???",
       prompt: "Đoán thử đi kkk",
       hint: "Gợi ý xíu nè: đó là một mốc thời gian",
-      revealTitle: "Đoán ra chưa?",
+      revealTitle: "Đoán ra chưa ?",
       revealText: "Đó là một ngày mà từ đó câu chuyện này bắt đầu.",
       countdownFrom: 5,
     },
@@ -115,9 +115,9 @@ const CONFIG = {
     {
       type: "profile",
       images: [
-        { src: "img/KhanhTruong_1.jpg", alt: "", caption: "Đây là lúc kẹt máy tập ông thay thế bằng 1 bài tập khác rất kì nhưng cũng rất tếu" },
-        { src: "img/KhanhTruong_2.jpg", alt: "", caption: "Này là hình lúc đi ăn bòa. Bận cái áo màu đỏ mà tui khen đẹp. Ê mà áo đó đẹp thiệt" },
-        { src: "", alt: "", caption: "" },
+        { src: "img/KhanhTruong_1.jpg", alt: "", caption: "Máy tập đùi sau chứ hong phải máy tập lưng dưới ông êiii" },
+        { src: "img/KhanhTruong_2.jpg", alt: "", caption: "Đi ăn bòa, bận áo đỏ, khen áo đẹp cái thấy bận quài kkk. Ê nói chứ đẹp thiệt hợp dáng" },
+        { src: "img/KhanhTruong_3.jpg", alt: "", caption: "Xin bài tập người ta xong rồi ngủ" },
       ],
       wishTitle: "Happy Birthday!",
       wishText: "Luôn vui vẻ, ít nhậu lại và khum được hút thuốc. Dễ thường thì phải cười nhiều :)",
@@ -140,7 +140,7 @@ const CONFIG = {
     },
     {
       type: "closing",
-      text: "Oke, vậy là hết rồi. Giờ quay lại nói tui nghe xem ông có thích món quà này hong nhé!",
+      text: "Oke, vậy là hết rồi. Seo món quà này oke hong ? Hãy ra tín hiệu nếu ông thích nó hehe !!!",
       replayText: "Or click, if you want to watch it again.",
     },
   ],

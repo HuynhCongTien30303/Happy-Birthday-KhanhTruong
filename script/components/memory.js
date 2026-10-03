@@ -16,7 +16,9 @@
       const div = document.createElement("div");
       const countdownFrom = Math.max(1, Number(section.countdownFrom) || 5);
       const numbers = Array.from({ length: countdownFrom }, (_, index) => countdownFrom - index);
-      const date = section.date || formatSecretAsDate(config.game && config.game.secret);
+      const date = section.date || formatSecretAsDate(
+        config.game && window.decodeGameSecret(config.game.secretCode)
+      );
 
       div.className = "section section-memory";
       div.innerHTML = `
