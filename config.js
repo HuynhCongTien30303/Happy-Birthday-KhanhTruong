@@ -133,9 +133,9 @@ const CONFIG = {
     },
     {
       type: "voice",
-      text: "Có cái này tui muốn tự nói…",
+      text: "Có cái này tui muốn nói…",
       buttonText: "Phát lời nhắn",
-      audio: "music/hbd.mpeg", // Thêm file ghi âm của bạn vào đường dẫn này
+      audio: "music/HPBD_KTruong.mp3", // Thêm file ghi âm của bạn vào đường dẫn này
       duckVolume: 0.12,                   // Âm lượng nhạc nền trong lúc phát lời thoại
     },
     {
